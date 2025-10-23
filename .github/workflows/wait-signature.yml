@@ -83,7 +83,7 @@ jobs:
             if: steps.check.outputs.signed_artifacts == ''
             uses: benc-uk/workflow-dispatch@v1
             with:
-              workflow: waiting-loop.yml
+              workflow: wait-signature.yml
               inputs: |
                 { 
                     "workflow_id": "${{ github.event.inputs.workflow_id }}",
