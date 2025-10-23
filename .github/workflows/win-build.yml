@@ -29,6 +29,7 @@ jobs:
 
       # Dispatch a request to the OSSign repo for build + signing
       - name: Dispatch to OSSign
+        id: dispatch
         uses: ossign/actions/workflow/dispatch@main
         with:
           # You receive the username and token from OSSign after your application has been approved
