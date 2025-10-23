@@ -1,0 +1,53 @@
+# This file will build the program and dispatch it to OSSign for signing.
+# It will then start a waiting loop with the workflow file wait-signature to wait for the signed files to appear
+name: Build and Dispatch
+
+on:
+  push:
+    tags: ['*.*.*']
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      # Needs actions: write to be able to dispatch workflows
+      actions: write
+      contents: read
+    steps:
+      # Checkout the code and build the program
+      # to make sure everything works as expected
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.25.1'
+      
+      - name: Build the program
+        run: go build -o myprogram.exe main.go
+
+
+      # Dispatch a request to the OSSign repo for build + signing
+      - name: Dispatch to OSSign
+        uses: ossign/actions/workflow/dispatch@main
+        with:
+          # You receive the username and token from OSSign after your application has been approved
+          username: ${{ secrets.OSSIGN_USER }}
+          token: ${{ secrets.OSSIGN_TOKEN }}
+
+          # If you want to keep the workflow running until you have the signed file, you can change this to false
+          # Bear in mind that it might sometimes take a while before the dispatch is approved, and this will keep the workflow running and billing if you are using a non-free runner
+          dispatch_only: true
+        
+      # Echo the workflow ID for debugging purposes
+      - run: |
+          echo "Received workflow ID: ${{ steps.dispatch.outputs.workflow_id }}"
+    
+      # Starts the waiting loop, only required with dispatch_only: true
+      # This will start the waiting-loop.yml workflow. For more information, see that file.    
+      - name: Start the waiting loop
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: wait-signature.yml
+          inputs: |
+            { "workflow_id": "${{ steps.dispatch.outputs.workflow_id }}" }
